@@ -19,6 +19,7 @@ HEREDOC
   chmod +x $pioSpy
 
   cd $BUILD_DIR
+  unset AWS_REGION
   unset PIO_OPTS
   unset PIO_TRAIN_SPARK_OPTS
   unset PIO_S3_BUCKET_NAME
@@ -41,28 +42,14 @@ test_train_params()
   assertEquals "" "$(cat ${STD_ERR})"
 }
 
-test_train_params_with_s3_bucket()
+test_train_params_with_aws_region()
 {
-  export PIO_S3_BUCKET_NAME=example-bucket
-  export PIO_S3_AWS_ACCESS_KEY_ID=YYYYY
-  export PIO_S3_AWS_SECRET_ACCESS_KEY=ZZZZZ
+  export AWS_REGION=eu-central-1
 
   capture ${BUILDPACK_HOME}/bin/engine/heroku-buildpack-pio-train
   assertEquals 0 ${rtrn}
   assertEquals \
-    "train -- --packages org.apache.hadoop:hadoop-aws:2.7.2" \
-    "$(cat ${STD_OUT})"
-  assertEquals "" "$(cat ${STD_ERR})"
-}
-
-test_train_params_with_s3_bucket_missing_key()
-{
-  export PIO_S3_BUCKET_NAME=example-bucket
-
-  capture ${BUILDPACK_HOME}/bin/engine/heroku-buildpack-pio-train
-  assertEquals 0 ${rtrn}
-  assertEquals \
-    "train --" \
+    "train -- --conf spark.executor.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4 --conf spark.driver.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4" \
     "$(cat ${STD_OUT})"
   assertEquals "" "$(cat ${STD_ERR})"
 }

@@ -106,6 +106,7 @@ compile()
 {
   cd ${BUILDPACK_HOME}
   capture ${BUILDPACK_HOME}/bin/compile ${BUILD_DIR} ${CACHE_DIR} ${ENV_DIR}
+  cd ${BUILDPACK_HOME}
 }
 
 release()

@@ -1,18 +1,21 @@
 #!/bin/sh
 . ${BUILDPACK_HOME}/test/helper.sh
 
-test_compile_with_defaults() {
+SKIP_test_compile_with_defaults() {
   ENGINE_FIXTURE_DIR="$BUILDPACK_HOME/test/fixtures/predictionio-engine-classification-4.0.0"
   cp -r $ENGINE_FIXTURE_DIR/* $ENGINE_FIXTURE_DIR/.[!.]* $BUILD_DIR
 
   unset PREDICTIONIO_DIST_URL
   unset PIO_BUILD_SPARK_VERSION
+  unset PIO_BUILD_HADOOP_VERSION
 
   compile
 
   assertEquals "\`pio build\` exit code was ${RETURN} instead of 0" "0" "${RETURN}"
   assertTrue "missing Procfile" "[ -f $BUILD_DIR/Procfile ]"
-  assertTrue "missing PostgreSQL driver" "[ -f $BUILD_DIR/lib/postgresql_jdbc.jar ]"
+  assertTrue "missing PostgreSQL JDBC" "[ -f $BUILD_DIR/lib/postgresql_jdbc.jar ]"
+  assertTrue "missing AWS SDK" "[ -f $BUILD_DIR/pio-engine/PredictionIO-dist/lib/spark/aws-java-sdk.jar ]"
+  assertTrue "missing Hadoop-AWS" "[ -f $BUILD_DIR/pio-engine/PredictionIO-dist/lib/spark/hadoop-aws.jar ]"
   assertTrue "missing runtime memory config" "[ -f $BUILD_DIR/.profile.d/pio-memory.sh ]"
   assertTrue "missing runtime path config" "[ -f $BUILD_DIR/.profile.d/pio-path.sh ]"
   assertTrue "missing runtime config renderer" "[ -f $BUILD_DIR/.profile.d/pio-render-configs.sh ]"
@@ -45,18 +48,22 @@ test_compile_with_defaults() {
 }
 
 test_compile_with_predictionio_0_11_0_SNAPSHOT() {
-  ENGINE_FIXTURE_DIR="$BUILDPACK_HOME/test/fixtures/predictionio-engine-classification-4.0.0"
+  ENGINE_FIXTURE_DIR="$BUILDPACK_HOME/test/fixtures/predictionio-engine-classification-4.0.0-scala-2.11"
   cp -r $ENGINE_FIXTURE_DIR/* $ENGINE_FIXTURE_DIR/.[!.]* $BUILD_DIR
 
   # Use the develop branch (0.11.0-SNAPSHOT) as of March 30, 2017,
   # until the "stateless build" feature is available in a release.
-  export PREDICTIONIO_DIST_URL="https://marsikai.s3.amazonaws.com/PredictionIO-0.11.0-23a86932.tar.gz"
-  unset PIO_BUILD_SPARK_VERSION
+  export PREDICTIONIO_DIST_URL="https://marsikai.s3.amazonaws.com/PredictionIO-0.11.0-23a86932-spark2.tar.gz"
+  export PIO_BUILD_SPARK_VERSION=2.1.0
+  export PIO_BUILD_HADOOP_VERSION=2.7
 
   compile
 
   assertEquals "\`pio build\` exit code was ${RETURN} instead of 0" "0" "${RETURN}"
   assertTrue "missing Procfile" "[ -f $BUILD_DIR/Procfile ]"
+  assertTrue "missing PostgreSQL JDBC" "[ -f $BUILD_DIR/lib/postgresql_jdbc.jar ]"
+  assertTrue "missing AWS SDK" "[ -f $BUILD_DIR/pio-engine/PredictionIO-dist/lib/spark/aws-java-sdk.jar ]"
+  assertTrue "missing Hadoop-AWS" "[ -f $BUILD_DIR/pio-engine/PredictionIO-dist/lib/spark/hadoop-aws.jar ]"
   assertTrue "missing PostgreSQL driver" "[ -f $BUILD_DIR/lib/postgresql_jdbc.jar ]"
   assertTrue "missing runtime memory config" "[ -f $BUILD_DIR/.profile.d/pio-memory.sh ]"
   assertTrue "missing runtime path config" "[ -f $BUILD_DIR/.profile.d/pio-path.sh ]"
@@ -65,18 +72,39 @@ test_compile_with_predictionio_0_11_0_SNAPSHOT() {
   assertTrue "missing train executable" "[ -f $BUILD_DIR/bin/heroku-buildpack-pio-train ]"
   assertTrue "missing release executable" "[ -f $BUILD_DIR/bin/heroku-buildpack-pio-release ]"
   assertTrue "missing data loader executable" "[ -f $BUILD_DIR/bin/heroku-buildpack-pio-load-data ]"
-  expected_output="$BUILD_DIR/pio-engine/target/scala-2.10/template-scala-parallel-classification-assembly-0.1-SNAPSHOT-deps.jar"
+  expected_output="$BUILD_DIR/pio-engine/target/scala-2.11/template-scala-parallel-classification-assembly-0.1-SNAPSHOT-deps.jar"
   assertTrue "missing Scala build output: $expected_output" "[ -f $expected_output ]"
 
   echo "-----> Stage build for testing in /app/pio-engine (same as dyno runtime)"
   mv $BUILD_DIR/* $BUILD_DIR/.[!.]* /app/
   cd /app/pio-engine
 
+  echo '-----> /app'
+  ls -hal /app
+  echo '-----> /app/lib'
+  ls -hal /app/lib
+  echo '-----> /app/pio-engine'
+  ls -hal /app/pio-engine
+  echo '-----> /app/pio-engine/PredictionIO-dist'
+  ls -hal /app/pio-engine/PredictionIO-dist
+  echo '-----> /app/pio-engine/PredictionIO-dist/conf'
+  ls -hal /app/pio-engine/PredictionIO-dist/conf
+  echo '-----> /app/pio-engine/PredictionIO-dist/lib'
+  ls -hal /app/pio-engine/PredictionIO-dist/lib
+  echo '-----> /app/pio-engine/PredictionIO-dist/vendors'
+  ls -hal /app/pio-engine/PredictionIO-dist/vendors
+
+  echo '-----> /app/pio-engine/PredictionIO-dist/conf/pio-env.sh'
+  cat /app/pio-engine/PredictionIO-dist/conf/pio-env.sh
+
+  echo '-----> env'
+  env
+
   capture ./PredictionIO-dist/bin/pio status
 
   assertEquals "\`pio status\` exit code was ${RETURN} instead of 0" "0" "${RETURN}"
   assertContains "PredictionIO 0.11.0-SNAPSHOT" "$(cat ${STD_OUT})"
-  assertContains "Apache Spark 1.6.3" "$(cat ${STD_OUT})"
+  assertContains "Apache Spark 2.1.0" "$(cat ${STD_OUT})"
   assertContains "Meta Data Backend (Source: PGSQL)" "$(cat ${STD_OUT})"
   assertContains "Model Data Backend (Source: PGSQL)" "$(cat ${STD_OUT})"
   assertContains "Event Data Backend (Source: PGSQL)" "$(cat ${STD_OUT})"

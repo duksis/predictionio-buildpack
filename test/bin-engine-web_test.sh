@@ -20,6 +20,7 @@ HEREDOC
 
   cd $BUILD_DIR
   unset PORT
+  unset AWS_REGION
   unset PIO_OPTS
   unset PIO_SPARK_OPTS
   unset PIO_ENABLE_FEEDBACK
@@ -59,30 +60,15 @@ test_web_params_missing_port()
     "$(cat ${STD_ERR})"
 }
 
-test_web_params_with_s3_bucket()
+test_web_params_with_aws_region()
 {
   export PORT=853211
-  export PIO_S3_BUCKET_NAME=example-bucket
-  export PIO_S3_AWS_ACCESS_KEY_ID=YYYYY
-  export PIO_S3_AWS_SECRET_ACCESS_KEY=ZZZZZ
+  export AWS_REGION=eu-central-1
   
   capture ${BUILDPACK_HOME}/bin/engine/heroku-buildpack-pio-web
   assertEquals 0 ${rtrn}
   assertEquals \
-    "deploy --port 853211 -- --packages org.apache.hadoop:hadoop-aws:2.7.2" \
-    "$(cat ${STD_OUT})"
-  assertEquals "" "$(cat ${STD_ERR})"
-}
-
-test_web_params_with_s3_bucket_missing_key()
-{
-  export PORT=853211
-  export PIO_S3_BUCKET_NAME=example-bucket
-  
-  capture ${BUILDPACK_HOME}/bin/engine/heroku-buildpack-pio-web
-  assertEquals 0 ${rtrn}
-  assertEquals \
-    "deploy --port 853211 --" \
+    "deploy --port 853211 -- --conf spark.executor.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4 --conf spark.driver.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4" \
     "$(cat ${STD_OUT})"
   assertEquals "" "$(cat ${STD_ERR})"
 }

@@ -79,10 +79,13 @@ then
   PIO_VERSION=0.10.0-incubating
   echo "Using Apache PredictionIO ${PIO_VERSION}" | indent
 else
-  mkdir -p "$BUILD_DIR/.heroku"
-  echo '# Presence of this file indicates a pre-Apache engine (<= 0.9)' > "$BUILD_DIR/.heroku/.is_old_predictionio"
   PIO_VERSION=0.9.5
   echo "Using PredictionIO $PIO_VERSION" | indent
+  echo '--------------------------------------------------------------' | indent
+  echo 'The engine template is too old to deploy with this buildpack.' | indent
+  echo 'Please upgrade and update the version spec in `template.json`.' | indent
+  echo '--------------------------------------------------------------' | indent
+  exit 1
 fi
 
 PIO_BUILD=PredictionIO-${PIO_VERSION}
@@ -150,7 +153,7 @@ then
   cd $app_prefix
 
   echo "Enable local Maven repo" | indent
-  mv $BP_DIR/repo .
+  cp -r $BP_DIR/repo .
   (echo && \
     echo '// Search for packages provided by predictionio-buildpack' && \
     echo 'resolvers += "Local Maven Repository" at "file://"+baseDirectory.value+"/repo"') >> build.sbt

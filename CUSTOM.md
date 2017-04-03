@@ -6,13 +6,13 @@
 
 🗺 See the [buildpack README](README.md) for an overview of the tools used in these docs.
 
-
 ## Docs 📚
 
 ✏️ Throughout this document, code terms that start with `$` represent a value (shell variable) that should be replaced with a customized value, e.g `$EVENTSERVER_NAME`, `$ENGINE_NAME`, `$POSTGRES_ADDON_ID`…
 
 Please, follow the steps in the order documented.
 
+* [Requirements](#requirements)
 * [Eventserver](#eventserver)
   1. [Create the eventserver](#create-the-eventserver)
   1. [Deploy the eventserver](#deploy-the-eventserver)
@@ -37,6 +37,39 @@ Please, follow the steps in the order documented.
   * [Environment variables](#environment-variables)
 * [Running commands](#running-commands)
 
+-----
+
+## Requirements
+
+### Versions
+
+Supports two project flavors:
+
+| PredictionIO version | 0.10.0-incubating | 0.11.0-incubating |
+| ---                  |               ---:|               ---:|
+| Scala                | 2.10              | 2.11              |
+| Spark                | 1.6               | 2.1               |
+| Hadoop               | 2.6               | 2.7               |
+| Elasticsearch        | 1.x               | 5.x               |
+
+
+* **PredictionIO** set version in `template.json`
+
+    ```json
+    {"pio": {"version": { "min": "0.11.0-incubating" }}}
+    ```
+* **Scala** set version in `build.sbt`
+
+    ```scala
+    scalaVersion := "2.11.8"
+    ```
+* **Spark** & **Hadoop* set version in config var
+
+    ```bash
+    heroku config:set \
+      PIO_BUILD_SPARK_VERSION=2.1.0 \
+      PIO_BUILD_HADOOP_VERSION=2.7
+    ```
 
 ## Eventserver
 
