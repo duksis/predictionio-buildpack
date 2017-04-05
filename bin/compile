@@ -171,6 +171,7 @@ else
   cp "${default_pio_env}" "${target_pio_env}" | indent
 fi
 cp "$BP_DIR/config/core-site.xml.erb" "$dist_dir/conf/"
+cp "$BP_DIR/config/spark-defaults.conf.erb" "$dist_dir/conf/"
 
 echo "Set-up runtime environment" | indent
 mkdir -p "$BUILD_DIR/.profile.d"

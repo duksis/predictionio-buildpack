@@ -60,19 +60,6 @@ test_web_params_missing_port()
     "$(cat ${STD_ERR})"
 }
 
-test_web_params_with_aws_region()
-{
-  export PORT=853211
-  export AWS_REGION=eu-central-1
-  
-  capture ${BUILDPACK_HOME}/bin/engine/heroku-buildpack-pio-web
-  assertEquals 0 ${rtrn}
-  assertEquals \
-    "deploy --port 853211 -- --conf spark.executor.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4 --conf spark.driver.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4" \
-    "$(cat ${STD_OUT})"
-  assertEquals "" "$(cat ${STD_ERR})"
-}
-
 test_web_params_with_pio_opts()
 {
   export PORT=853211

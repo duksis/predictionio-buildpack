@@ -42,18 +42,6 @@ test_train_params()
   assertEquals "" "$(cat ${STD_ERR})"
 }
 
-test_train_params_with_aws_region()
-{
-  export AWS_REGION=eu-central-1
-
-  capture ${BUILDPACK_HOME}/bin/engine/heroku-buildpack-pio-train
-  assertEquals 0 ${rtrn}
-  assertEquals \
-    "train -- --conf spark.executor.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4 --conf spark.driver.extraJavaOptions=-Dcom.amazonaws.services.s3.enableV4" \
-    "$(cat ${STD_OUT})"
-  assertEquals "" "$(cat ${STD_ERR})"
-}
-
 test_train_params_with_pio_opts()
 {
   export PIO_OPTS='--variant best.json'
